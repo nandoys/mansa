@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyAtdsShbpPe_KoU8fudojBJiLW_k-8NBUM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>125620699387</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.trustholding.mansa.mansa.RunnerTests</string>
+	<key>PROJECT_ID</key>
+	<string>mansa-e4477</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mansa-e4477.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:125620699387:ios:10cdbc1aacb03e0ad0705e</string>
+</dict>
+</plist>
