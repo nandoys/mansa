@@ -18,6 +18,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
   TextEditingController phoneNumberController = TextEditingController();
   String? country = 'CD';
   String? countryDialCode = '+243';
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   void onChangedCountry(CountryCode? countryCode) {
     if(countryCode != null) {
@@ -37,159 +38,186 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
 
   void verificationCompleted(PhoneAuthCredential phoneAuthCredential) async {
     await widget._auth.signInWithCredential(phoneAuthCredential);
+    print('my Credential-------------------------------');
+    print(phoneAuthCredential.smsCode);
+    print('my Credential-------------------------------');
   }
+
   void verificationFailed(FirebaseAuthException error) {
     throw Exception(error.message);
   }
-  void codeSent(String verificationId, int? forceResendingToken) {}
-  void codeAutoRetrievalTimeout(String verificationId) {}
+
+  void codeSent(String verificationId, int? forceResendingToken) {
+    String phoneNumber = "$countryDialCode${phoneNumberController.text}";
+    final route = MaterialPageRoute(
+        builder: (context) => VerificationCode(
+          phoneNumber: phoneNumber, verificationId: verificationId,
+        )
+    );
+    Navigator.of(context).push(route);
+  }
+
+  void codeAutoRetrievalTimeout(String verificationId) {
+    print('my timeout-------------------------------');
+    print(verificationId);
+    print('my timeout-------------------------------');
+  }
 
   void sendSMS() {
-    String phoneNumber = "$countryDialCode${phoneNumberController.text}";
-    final route = MaterialPageRoute(builder: (context) => VerificationCode(phoneNumber: phoneNumber, otp: "1234",));
-    try {
-      widget._auth.verifyPhoneNumber(
-          phoneNumber: phoneNumber,
-          verificationCompleted: verificationCompleted,
-          verificationFailed: verificationFailed,
-          codeSent: codeSent,
-          codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
-      );
-    } on FirebaseAuthException catch (e) {
-      final snackBar = SnackBar(content: Text(e.message.toString()));
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    if (formKey.currentState!.validate()) {
+      String phoneNumber = "$countryDialCode${phoneNumberController.text}";
+      try {
+        widget._auth.verifyPhoneNumber(
+            phoneNumber: phoneNumber,
+            verificationCompleted: verificationCompleted,
+            verificationFailed: verificationFailed,
+            codeSent: codeSent,
+            codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
+        );
+      } on FirebaseAuthException catch (e) {
+        final snackBar = SnackBar(content: Text(e.message.toString()));
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
     }
-
-    //Navigator.of(context).push(route);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            'Tout commence par un pas',
-            style: TextStyle(
-                fontSize: 20.0,
-                fontWeight: FontWeight.w600,
-                color: Colors.white
-            ),
-          ),
-          SizedBox(
-            width: 500,
-            height: 300,
-            child: FittedBox(
-              child: Image.asset('assets/images/auth-illustration.png'),
-            ),
-          ),
-          const Text(
-            'Entrez votre numéro pour recevoir un SMS de confirmation',
-            style: TextStyle(
-                color: Colors.white70
-            ),
-          ),
-          Form(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  children: [
-                    CountryListPick(
-                      appBar: AppBar(
-                        leading: BackButton(
-                          style: ButtonStyle(
-                              foregroundColor: MaterialStateProperty.resolveWith((states) => Colors.white)
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Tout commence par un pas',
+                  style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white
+                  ),
+                ),
+                SizedBox(
+                  width: 500,
+                  height: 300,
+                  child: FittedBox(
+                    child: Image.asset('assets/images/auth-illustration.png'),
+                  ),
+                ),
+                const Text(
+                  'Entrez votre numéro pour recevoir un SMS de confirmation',
+                  style: TextStyle(
+                      color: Colors.white70
+                  ),
+                ),
+                Form(
+                    key: formKey,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        children: [
+                          CountryListPick(
+                            appBar: AppBar(
+                              leading: BackButton(
+                                style: ButtonStyle(
+                                    foregroundColor: MaterialStateProperty.resolveWith((states) => Colors.white)
+                                ),
+                              ),
+                              backgroundColor: Colors.yellow.shade700,
+                              title: const Text('Choisir un pays', style: TextStyle(color: Colors.white),),
+                            ),
+                            theme: CountryTheme(
+                                searchText: "Recherche",
+                                searchHintText: "Écrire ici...",
+                                lastPickText: "Choix actuel",
+                                alphabetSelectedBackgroundColor: Colors.yellow.shade700,
+                                isShowFlag: true,
+                                isShowCode: true,
+                                isShowTitle: false,
+                                showEnglishName: false
+                            ),
+                            initialSelection: country,
+                            pickerBuilder: (context, CountryCode? countryCode){
+                              return Row(
+                                children: [
+                                  SizedBox(
+                                    width: 30,
+                                    height: 30,
+                                    child: Image.asset(
+                                      countryCode?.flagUri ?? '',
+                                      package: 'country_list_pick',
+                                    ),
+                                  ),
+                                  Text(
+                                    countryCode?.dialCode ?? '',
+                                    style: TextStyle(
+                                        color: Colors.yellow.shade700
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                            onChanged: onChangedCountry,
+                            useSafeArea: true,
+                            useUiOverlay: true,
                           ),
+                          Expanded(
+                              child: TextFormField(
+                                controller: phoneNumberController,
+                                keyboardType: TextInputType.phone,
+                                textInputAction: TextInputAction.done,
+                                autovalidateMode: AutovalidateMode.onUserInteraction,
+                                validator: ValidationBuilder().required("Numéro requis").maxLength(
+                                    9, "Entrez 9 chiffres"
+                                ).minLength(
+                                    9, "Entrez 9 chiffres"
+                                ).phone("Numéro invalide").add((value) {
+                                  if(value?.replaceAll(" ", "").length != 9) {
+                                    return "Numéro invalide";
+                                  }
+                                  return null;
+                                }).build(),
+                                decoration: InputDecoration(
+                                  hintText: "Numéro de téléphone",
+                                  hintStyle: TextStyle(
+                                      color: Colors.yellow.shade700
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                    color: Colors.white
+                                ),
+                              )
+                          )
+                        ],
+                      ),
+                    )
+                ),
+                SizedBox(
+                  width: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
                         ),
-                        backgroundColor: Colors.yellow.shade700,
-                        title: const Text('Choisir un pays', style: TextStyle(color: Colors.white),),
-                      ),
-                      theme: CountryTheme(
-                          searchText: "Recherche",
-                          searchHintText: "Écrire ici...",
-                          lastPickText: "Choix actuel",
-                          alphabetSelectedBackgroundColor: Colors.yellow.shade700,
-                          isShowFlag: true,
-                          isShowCode: true,
-                          isShowTitle: false,
-                          showEnglishName: false
-                      ),
-                      initialSelection: country,
-                      pickerBuilder: (context, CountryCode? countryCode){
-                        return Row(
-                          children: [
-                            SizedBox(
-                              width: 30,
-                              height: 30,
-                              child: Image.asset(
-                                countryCode?.flagUri ?? '',
-                                package: 'country_list_pick',
-                              ),
-                            ),
-                            Text(
-                              countryCode?.dialCode ?? '',
-                              style: TextStyle(
-                                  color: Colors.yellow.shade700
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      onChanged: onChangedCountry,
-                      useSafeArea: true,
-                      useUiOverlay: true,
-                    ),
-                    Expanded(
-                        child: TextFormField(
-                          controller: phoneNumberController,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.done,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          validator: ValidationBuilder().maxLength(
-                              9, "Entrez 9 chiffres"
-                          ).minLength(
-                              9, "Entrez 9 chiffres"
-                          ).phone("Numéro invalide").build(),
-                          decoration: InputDecoration(
-                              hintText: "Numéro de téléphone",
-                              hintStyle: TextStyle(
-                                color: Colors.yellow.shade700
-                              ),
-                          ),
-                          style: const TextStyle(
-                              color: Colors.white
+                        onPressed: sendSMS,
+                        child: const Text(
+                          'Créer un compte',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold
                           ),
                         )
-                    )
-                  ],
-                ),
-              )
-          ),
-          SizedBox(
-            width: 300,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 12.0),
-              child: ElevatedButton(
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
-                  ),
-                  onPressed: sendSMS,
-                  child: const Text(
-                    'Créer un compte',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.0,
-                        fontWeight: FontWeight.bold
                     ),
-                  )
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -441,10 +469,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
 
 class VerificationCode extends StatefulWidget {
-  const VerificationCode({super.key, required this.phoneNumber, required this.otp});
+  const VerificationCode({super.key, required this.phoneNumber, required this.verificationId});
 
   final String phoneNumber;
-  final String otp;
+  final String verificationId;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
@@ -452,87 +480,108 @@ class VerificationCode extends StatefulWidget {
 
 class _VerificationCodeState extends State<VerificationCode> {
   FirebaseAuth auth = FirebaseAuth.instance;
+  String? otp;
 
+  void onCompleted(String value) {
+    setState(() {
+      otp = value;
+    });
+  }
   void resend() {}
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Vérification du numéro de téléphone",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 30.0
-              ),
-            ),
-            Row(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  "Entrez le code envoyé au ",
+                  "Vérification du numéro de téléphone",
                   style: TextStyle(
-                    color: Colors.white70
+                      color: Colors.white,
+                      fontSize: 30.0
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(
+                  width: 400,
+                  height: 300,
+                  child: FittedBox(
+                    child: Image.asset('assets/images/enter-otp.png'),
                   ),
                 ),
-                Text(
-                  widget.phoneNumber,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.bold
-                  ),
-                ),
-              ],
-            ),
-            LayoutBuilder(
-                builder: (context, constraints) {
-                  return SizedBox(
-                    width: constraints.maxWidth * 0.50,
-                    child: PinCodeTextField(
-                      length: 6,
-                      appContext: context,
-                      pinTheme: PinTheme(
-                        inactiveColor: Colors.yellow.shade700
-                      ),
-                      cursorColor: Colors.white,
-                      autoFocus: true,
-                    ),
-                  );
-                }
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Vous n'avez pas reçu de code ? ",
-                  style: TextStyle(
-                      color: Colors.white70
-                  ),
-                ),
-                TextButton(
-                    onPressed: resend,
-                    child: Text(
-                      "Renvoyer",
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Entrez le code envoyé au ",
                       style: TextStyle(
-                        color: Colors.yellow.shade700
+                          color: Colors.white70
                       ),
+                    ),
+                    Text(
+                      widget.phoneNumber,
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ],
+                ),
+                LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SizedBox(
+                        width: constraints.maxWidth * 0.70,
+                        child: PinCodeTextField(
+                          length: 6,
+                          appContext: context,
+                          pinTheme: PinTheme(
+                              inactiveColor: Colors.yellow.shade700,
+                              selectedColor: Colors.white,
+                              shape: PinCodeFieldShape.box,
+                              borderRadius: BorderRadius.circular(12.0)
+                          ),
+                          textStyle: const TextStyle(
+                              color: Colors.white
+                          ),
+                          cursorColor: Colors.white,
+                          keyboardType: TextInputType.number,
+                          autoFocus: true,
+                          separatorBuilder: (context, index) {
+                            return const SizedBox(width: 5.0,);
+                          },
+                          onCompleted: onCompleted,
+                        ),
+                      );
+                    }
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Vous n'avez pas reçu de code ? ",
+                      style: TextStyle(
+                          color: Colors.white70
+                      ),
+                    ),
+                    TextButton(
+                        onPressed: resend,
+                        child: Text(
+                          "Renvoyer",
+                          style: TextStyle(
+                              color: Colors.yellow.shade700
+                          ),
+                        )
                     )
-                )
+                  ],
+                ),
               ],
             ),
-            ElevatedButton(
-                onPressed: (){},
-                child: const Text(
-                  "Vérifier",
-                  style: TextStyle(
-                    color: Colors.white
-                  ),
-                )
-            )
-          ],
+          ),
         ),
       ),
     );
