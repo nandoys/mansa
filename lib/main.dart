@@ -90,107 +90,111 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'Bienvenue sur',
-              style: TextStyle(
-                  fontSize: 30.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white
-              ),
-            ),
-            SizedBox(
-              width: 300,
-              height: 300,
-              child: FittedBox(
-                child: Image.asset('assets/images/logo.png'),
-              ),
-            ),
-            Row(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Flexible(
-                    child: Text(
-                      'Lisez notre ',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.0
-                      ),
-                    )
-                ),
-                Flexible(
-                    child: InkWell(
-                      onTap: showPrivacy,
-                      child: Text(
-                        'politique de confidentialité, ',
-                        style: TextStyle(
-                            color: Colors.yellow.shade700,
-                            fontSize: 8.0
-                        ),
-                      ),
-                    )
-                ),
-                const Flexible(
-                    child: Text(
-                      "Cliquez sur 'Accepter et Continuer' ",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8.0
-                      ),
-                    )
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'pour accepter ',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 8.0
-                    ),
-                  ),
-                  InkWell(
-                    onTap: showPrivacy,
-                    child: Text(
-                      "les conditions d'utilisation",
-                      style: TextStyle(
-                          color: Colors.yellow.shade700,
-                          fontSize: 8.0
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ElevatedButton(
-                onPressed: register,
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
-                ),
-                child: const Text(
-                  'Accepter et Continuer',
+              children: <Widget>[
+                const Text(
+                  'Bienvenue sur',
                   style: TextStyle(
+                      fontSize: 30.0,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white
                   ),
-                )
-            ),
-            const Padding(
-              padding: EdgeInsets.only(top: 40.0),
-              child: Text(
-                "Dévelopé par Gradi Nandoy",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.0
                 ),
-              ),
-            )
-          ],
+                SizedBox(
+                  width: 500,
+                  height: 300,
+                  child: FittedBox(
+                    child: Image.asset('assets/images/logo.png'),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Flexible(
+                        child: Text(
+                          'Lisez notre ',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        )
+                    ),
+                    Flexible(
+                        flex: 3,
+                        child: InkWell(
+                          onTap: showPrivacy,
+                          child: Text(
+                            'politique de confidentialité, ',
+                            style: TextStyle(
+                              color: Colors.yellow.shade700,
+                            ),
+                          ),
+                        )
+                    ),
+                    const Flexible(
+                        child: Text(
+                          "Cliquez sur ",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        )
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(
+                      bottom: 8.0
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Flexible(
+                        child: Text(
+                          "Accepter et Continuer pour accepter ",
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: showPrivacy,
+                        child: Text(
+                          "les conditions d'utilisation",
+                          style: TextStyle(
+                            color: Colors.yellow.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                    onPressed: register,
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
+                    ),
+                    child: const Text(
+                      'Accepter et Continuer',
+                      style: TextStyle(
+                          color: Colors.white
+                      ),
+                    )
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 40.0),
+                  child: Text(
+                    "Dévelopé par Gradi Nandoy",
+                    style: TextStyle(
+                        color: Colors.white,
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
