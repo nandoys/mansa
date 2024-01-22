@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:form_validator/form_validator.dart';
 import 'package:mansa/registration/ui/views/registration.dart';
 
 import 'firebase_options.dart';
@@ -10,6 +11,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
+  ValidationBuilder.setLocale('fr');
   runApp(const MyApp());
 }
 
@@ -27,12 +29,12 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: 'Roboto',
           scaffoldBackgroundColor: Colors.black87,
-          inputDecorationTheme: InputDecorationTheme(
+          inputDecorationTheme: const InputDecorationTheme(
             isDense: true,
             focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.yellow.shade700)
+                borderSide: BorderSide(color: Colors.white)
             ),
-            labelStyle: const TextStyle(
+            labelStyle: TextStyle(
                 color: Colors.white
             ),
           ),
@@ -78,15 +80,15 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  void register() {
+    final route = MaterialPageRoute(builder: (context) => AuthentificationPage());
+    Navigator.of(context).push(route);
+  }
+
+  void showPrivacy() {}
+
   @override
   Widget build(BuildContext context) {
-
-    void register() {
-      final route = MaterialPageRoute(builder: (context) => const RegistrationForm());
-      Navigator.of(context).push(route);
-    }
-
-    void showPrivacy() {}
 
     return Scaffold(
       body: SafeArea(

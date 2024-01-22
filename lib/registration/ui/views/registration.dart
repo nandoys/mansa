@@ -1,8 +1,206 @@
 import 'package:country_list_pick/country_list_pick.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:form_validator/form_validator.dart';
 import 'package:intl/intl.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+
+class AuthentificationPage extends StatefulWidget {
+  AuthentificationPage({super.key});
+
+  final _auth = FirebaseAuth.instance;
+
+  @override
+  State<AuthentificationPage> createState() => _AuthentificationPageState();
+}
+
+class _AuthentificationPageState extends State<AuthentificationPage> {
+  TextEditingController phoneNumberController = TextEditingController();
+  String? country = 'CD';
+  String? countryDialCode = '+243';
+
+  void onChangedCountry(CountryCode? countryCode) {
+    if(countryCode != null) {
+      setState(() {
+        country = countryCode.code;
+        countryDialCode = countryCode.dialCode;
+      });
+    }
+  }
+
+  String? phoneValidation(String? number) {
+    if (number!.isEmpty) {
+      return "Numéro de téléphone obligatoire";
+    }
+    return null;
+  }
+
+  void verificationCompleted(PhoneAuthCredential phoneAuthCredential) async {
+    await widget._auth.signInWithCredential(phoneAuthCredential);
+  }
+  void verificationFailed(FirebaseAuthException error) {
+    throw Exception(error.message);
+  }
+  void codeSent(String verificationId, int? forceResendingToken) {}
+  void codeAutoRetrievalTimeout(String verificationId) {}
+
+  void sendSMS() {
+    String phoneNumber = "$countryDialCode${phoneNumberController.text}";
+    final route = MaterialPageRoute(builder: (context) => VerificationCode(phoneNumber: phoneNumber, otp: "1234",));
+    try {
+      widget._auth.verifyPhoneNumber(
+          phoneNumber: phoneNumber,
+          verificationCompleted: verificationCompleted,
+          verificationFailed: verificationFailed,
+          codeSent: codeSent,
+          codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
+      );
+    } on FirebaseAuthException catch (e) {
+      final snackBar = SnackBar(content: Text(e.message.toString()));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
+    //Navigator.of(context).push(route);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            'Tout commence par un pas',
+            style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.w600,
+                color: Colors.white
+            ),
+          ),
+          SizedBox(
+            width: 500,
+            height: 300,
+            child: FittedBox(
+              child: Image.asset('assets/images/auth-illustration.png'),
+            ),
+          ),
+          const Text(
+            'Entrez votre numéro pour recevoir un SMS de confirmation',
+            style: TextStyle(
+                color: Colors.white70
+            ),
+          ),
+          Form(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Row(
+                  children: [
+                    CountryListPick(
+                      appBar: AppBar(
+                        leading: BackButton(
+                          style: ButtonStyle(
+                              foregroundColor: MaterialStateProperty.resolveWith((states) => Colors.white)
+                          ),
+                        ),
+                        backgroundColor: Colors.yellow.shade700,
+                        title: const Text('Choisir un pays', style: TextStyle(color: Colors.white),),
+                      ),
+                      theme: CountryTheme(
+                          searchText: "Recherche",
+                          searchHintText: "Écrire ici...",
+                          lastPickText: "Choix actuel",
+                          alphabetSelectedBackgroundColor: Colors.yellow.shade700,
+                          isShowFlag: true,
+                          isShowCode: true,
+                          isShowTitle: false,
+                          showEnglishName: false
+                      ),
+                      initialSelection: country,
+                      pickerBuilder: (context, CountryCode? countryCode){
+                        return Row(
+                          children: [
+                            SizedBox(
+                              width: 30,
+                              height: 30,
+                              child: Image.asset(
+                                countryCode?.flagUri ?? '',
+                                package: 'country_list_pick',
+                              ),
+                            ),
+                            Text(
+                              countryCode?.dialCode ?? '',
+                              style: TextStyle(
+                                  color: Colors.yellow.shade700
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      onChanged: onChangedCountry,
+                      useSafeArea: true,
+                      useUiOverlay: true,
+                    ),
+                    Expanded(
+                        child: TextFormField(
+                          controller: phoneNumberController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.done,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: ValidationBuilder().maxLength(
+                              9, "Entrez 9 chiffres"
+                          ).minLength(
+                              9, "Entrez 9 chiffres"
+                          ).phone("Numéro invalide").build(),
+                          decoration: InputDecoration(
+                              hintText: "Numéro de téléphone",
+                              hintStyle: TextStyle(
+                                color: Colors.yellow.shade700
+                              ),
+                          ),
+                          style: const TextStyle(
+                              color: Colors.white
+                          ),
+                        )
+                    )
+                  ],
+                ),
+              )
+          ),
+          SizedBox(
+            width: 300,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: ElevatedButton(
+                  style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
+                  ),
+                  onPressed: sendSMS,
+                  child: const Text(
+                    'Créer un compte',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold
+                    ),
+                  )
+              ),
+            ),
+          ),
+        ],
+      ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    phoneNumberController.dispose();
+    super.dispose();
+  }
+}
+
 
 class RegistrationForm extends StatefulWidget {
   const RegistrationForm({super.key});
@@ -59,13 +257,6 @@ class _RegistrationFormState extends State<RegistrationForm> {
       });
     }
 
-  }
-
-  void verifyPhoneNumber() {
-    String phoneNumber = "$countryDialCode${phoneNumberController.text}";
-    final route = MaterialPageRoute(builder: (context) => VerificationCode(phoneNumber: phoneNumber));
-
-    Navigator.of(context).push(route);
   }
 
   @override
@@ -223,7 +414,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                             style: ButtonStyle(
                               backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
                             ),
-                            onPressed: verifyPhoneNumber,
+                            onPressed: null,
                             child: const Text(
                                 'Créer un compte',
                               style: TextStyle(color: Colors.white),
@@ -250,9 +441,10 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
 
 class VerificationCode extends StatefulWidget {
-  const VerificationCode({super.key, required this.phoneNumber});
+  const VerificationCode({super.key, required this.phoneNumber, required this.otp});
 
   final String phoneNumber;
+  final String otp;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
