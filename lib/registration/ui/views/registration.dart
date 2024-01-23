@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:form_validator/form_validator.dart';
 import 'package:intl/intl.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:mansa/utils/utils.dart';
 
 class AuthentificationPage extends StatefulWidget {
   AuthentificationPage({super.key});
@@ -49,7 +50,8 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
     setState(() {
       isLoading = false;
     });
-    throw Exception(error.message);
+    //network-request-failed
+    showSnackbar(context, error.message.toString());
   }
 
   void codeSent(String verificationId, int? forceResendingToken) {
@@ -100,12 +102,11 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
             codeSent: codeSent,
             codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
         );
-      } on FirebaseAuthException catch (e) {
+      } on FirebaseAuthException catch (error) {
         setState(() {
           isLoading = false;
         });
-        final snackBar = SnackBar(content: Text(e.message.toString()));
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        showSnackbar(context, error.message.toString());
       }
 
     }
@@ -199,16 +200,11 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.done,
                                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                                validator: ValidationBuilder().required("Numéro requis").maxLength(
+                                validator: ValidationBuilder(requiredMessage: "Numéro requis").maxLength(
                                     9, "Entrez 9 chiffres"
                                 ).minLength(
                                     9, "Entrez 9 chiffres"
-                                ).phone("Numéro invalide").add((value) {
-                                  if(value?.replaceAll(" ", "").length != 9) {
-                                    return "Numéro invalide";
-                                  }
-                                  return null;
-                                }).build(),
+                                ).regExp(RegExp(r'^[0-9]+$'), 'Numéro invalide').build(),
                                 onChanged: onChangedNumber,
                                 decoration: InputDecoration(
                                   hintText: "Numéro de téléphone",
