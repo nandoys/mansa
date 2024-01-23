@@ -18,6 +18,8 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
   TextEditingController phoneNumberController = TextEditingController();
   String? country = 'CD';
   String? countryDialCode = '+243';
+  bool isLoading = false;
+  bool isValidNumber = false;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   void onChangedCountry(CountryCode? countryCode) {
@@ -37,17 +39,24 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
   }
 
   void verificationCompleted(PhoneAuthCredential phoneAuthCredential) async {
+    setState(() {
+      isLoading = false;
+    });
     await widget._auth.signInWithCredential(phoneAuthCredential);
-    print('my Credential-------------------------------');
-    print(phoneAuthCredential.smsCode);
-    print('my Credential-------------------------------');
   }
 
   void verificationFailed(FirebaseAuthException error) {
+    setState(() {
+      isLoading = false;
+    });
     throw Exception(error.message);
   }
 
   void codeSent(String verificationId, int? forceResendingToken) {
+    setState(() {
+      isLoading = false;
+    });
+
     String phoneNumber = "$countryDialCode${phoneNumberController.text}";
     final route = MaterialPageRoute(
         builder: (context) => VerificationCode(
@@ -63,9 +72,26 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
     print('my timeout-------------------------------');
   }
 
+  void onChangedNumber(value) {
+    if (formKey.currentState!.validate()) {
+      setState(() {
+        isValidNumber = true;
+      });
+    } else {
+      if (isValidNumber) {
+        setState(() {
+          isValidNumber = false;
+        });
+      }
+    }
+  }
+
   void sendSMS() {
     if (formKey.currentState!.validate()) {
       String phoneNumber = "$countryDialCode${phoneNumberController.text}";
+      setState(() {
+        isLoading = true;
+      });
       try {
         widget._auth.verifyPhoneNumber(
             phoneNumber: phoneNumber,
@@ -75,9 +101,13 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
             codeAutoRetrievalTimeout: codeAutoRetrievalTimeout
         );
       } on FirebaseAuthException catch (e) {
+        setState(() {
+          isLoading = false;
+        });
         final snackBar = SnackBar(content: Text(e.message.toString()));
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
+
     }
   }
 
@@ -179,11 +209,16 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                                   }
                                   return null;
                                 }).build(),
+                                onChanged: onChangedNumber,
                                 decoration: InputDecoration(
                                   hintText: "Numéro de téléphone",
                                   hintStyle: TextStyle(
                                       color: Colors.yellow.shade700
                                   ),
+                                  suffixIcon: isValidNumber ? const Icon(
+                                    Icons.done,
+                                    color: Colors.green,
+                                  ) : null
                                 ),
                                 style: const TextStyle(
                                     color: Colors.white
@@ -202,8 +237,11 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                         style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
                         ),
-                        onPressed: sendSMS,
-                        child: const Text(
+                        onPressed: isLoading ? null : sendSMS,
+                        child: isLoading ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        ) :
+                        const Text(
                           'Créer un compte',
                           style: TextStyle(
                               color: Colors.white,
