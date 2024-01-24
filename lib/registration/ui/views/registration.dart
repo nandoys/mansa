@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_list_pick/country_list_pick.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -39,11 +40,26 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
     return null;
   }
 
-  void verificationCompleted(PhoneAuthCredential phoneAuthCredential) async {
+  void verificationCompleted(PhoneAuthCredential credential) async {
     setState(() {
       isLoading = false;
     });
-    await widget._auth.signInWithCredential(phoneAuthCredential);
+    try {
+      final User? user = (await widget._auth.signInWithCredential(credential)).user;
+      if(user != null) {
+        // TODO: save the user locally
+
+        final route = MaterialPageRoute(
+            builder: (context) => RegistrationPage(uuid: user.uid,)
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
+      }
+    } catch(error) {
+      print(error.runtimeType);
+    }
+
   }
 
   void verificationFailed(FirebaseAuthException error) {
@@ -118,6 +134,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -201,11 +218,12 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.done,
                                 autovalidateMode: AutovalidateMode.onUserInteraction,
-                                validator: ValidationBuilder(requiredMessage: "Numéro requis").maxLength(
+                                validator: ValidationBuilder(requiredMessage: "Numéro requis").
+                                regExp(RegExp(r'^[0-9]+$'), 'Numéro invalide').maxLength(
                                     9, "Entrez 9 chiffres"
                                 ).minLength(
                                     9, "Entrez 9 chiffres"
-                                ).regExp(RegExp(r'^[0-9]+$'), 'Numéro invalide').build(),
+                                ).build(),
                                 onChanged: onChangedNumber,
                                 decoration: InputDecoration(
                                   hintText: "Numéro de téléphone",
@@ -265,23 +283,27 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
 }
 
 
-class RegistrationForm extends StatefulWidget {
-  const RegistrationForm({super.key});
+class RegistrationPage extends StatefulWidget {
+  RegistrationPage({super.key, required this.uuid});
+
+  final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
+  final String uuid;
 
   @override
-  State<RegistrationForm> createState() => _RegistrationFormState();
+  State<RegistrationPage> createState() => _RegistrationPageState();
 }
 
-class _RegistrationFormState extends State<RegistrationForm> {
+class _RegistrationPageState extends State<RegistrationPage> {
   List<String> genders = <String>['Homme', 'Femme'];
-  List<String> idDocuments = <String>['Carte nationale', 'Passeport', 'Permis de conduire'];
+  // List<String> idDocuments = <String>['Carte nationale', 'Passeport', 'Permis de conduire'];
   String? genderValue;
-  String? idDocumentValue;
+  bool isLoading = false;
   DateTime birthday = DateTime(2006);
-  String? country = 'CD';
-  String? countryDialCode = '+243';
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController firstnameController = TextEditingController();
   TextEditingController birthDayController = TextEditingController();
-  TextEditingController phoneNumberController = TextEditingController();
 
 
   void onChangedGender(String? value) {
@@ -290,26 +312,12 @@ class _RegistrationFormState extends State<RegistrationForm> {
     });
   }
 
-  void onChangedCountry(CountryCode? countryCode) {
-    if(countryCode != null) {
-      setState(() {
-        country = countryCode.code;
-        countryDialCode = countryCode.dialCode;
-      });
-    }
-  }
-
-  void onChangedIdDocument(String? value) {
-    setState(() {
-      idDocumentValue = value;
-    });
-  }
-
   void pickDate() async {
     final dateValue = await showDatePicker(
         context: context,
         initialEntryMode: DatePickerEntryMode.calendarOnly,
         currentDate: birthday,
+        locale: const Locale("fr"),
         firstDate: DateTime(1924),
         lastDate: DateTime(2006,12,31),
     );
@@ -322,173 +330,157 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   }
 
+  void register() {
+    if (formKey.currentState!.validate()) {
+      setState(() {
+        isLoading = true;
+      });
+      final Map<String, dynamic> data = {
+        "uuid": widget.uuid,
+        "name": nameController.text,
+        "firstname": firstnameController.text,
+        "gender": genderValue,
+        "birthday": birthDayController.text
+      };
+
+      try {
+        widget._db.collection("accounts").add(data).then((document) {
+          setState(() {
+            isLoading = false;
+          });
+
+        });
+      } catch (error) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    String formatedDate = DateFormat('dd-MM-yyyy', 'fr').format(birthday);
-    birthDayController.text = formatedDate;
+    String formattedDate = DateFormat('dd-MM-yyyy', 'fr').format(birthday);
+    birthDayController.text = formattedDate;
 
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Commencez votre inscription',
-              style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white
-              ),
-            ),
-            Form(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 300,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                            labelText: "Nom de famille",
-                        ),
-                        style: const TextStyle(
-                          color: Colors.white
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                            labelText: "Prénom",
-                        ),
-                        style: const TextStyle(
-                            color: Colors.white
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: DropdownButtonFormField(
-                        onChanged: onChangedGender,
-                        decoration: const InputDecoration(
-                          labelText: "Sexe",
-                          isDense: false
-                        ),
-                        selectedItemBuilder: (BuildContext context) {
-                          return genders.map((String value) {
-                            return Text(
-                              genderValue ?? '',
-                              style: const TextStyle(color: Colors.white),
-                            );
-                          }).toList();
-                        },
-                        items: genders.map((value) => DropdownMenuItem(
-                            value: value,
-                            child: Text(
-                                value,
-                                style: const TextStyle(
-                                    color: Colors.black
-                                )
-                            )
-                        )).toList(),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: TextFormField(
-                        controller: birthDayController,
-                        onTap: pickDate,
-                        style: const TextStyle(
-                          color: Colors.white
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: "Date de naissance"
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: Row(
-                        children: [
-                          CountryListPick(
-                            appBar: AppBar(
-                              leading: BackButton(
-                                style: ButtonStyle(
-                                  foregroundColor: MaterialStateProperty.resolveWith((states) => Colors.white)
-                                ),
-                              ),
-                              backgroundColor: Colors.yellow.shade700,
-                              title: const Text('Choisir un pays', style: TextStyle(color: Colors.white),),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Complétez votre identité',
+                  style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white
+                  ),
+                ),
+                Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: nameController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                              labelText: "Nom de famille",
                             ),
-                            theme: CountryTheme(
-                                searchText: "Recherche",
-                                searchHintText: "Écrire ici...",
-                                lastPickText: "Choix actuel",
-                                alphabetSelectedBackgroundColor: Colors.yellow.shade700,
-                                isShowFlag: true,
-                                isShowCode: true,
-                                isShowTitle: false,
-                                showEnglishName: false
+                            style: const TextStyle(
+                                color: Colors.white
                             ),
-                            initialSelection: country,
-                            pickerBuilder: (context, CountryCode? countryCode){
-                              return Row(
-                                children: [
-                                  SizedBox(
-                                    width: 30,
-                                    height: 30,
-                                    child: Image.asset(
-                                      countryCode?.flagUri ?? '',
-                                      package: 'country_list_pick',
-                                    ),
-                                  ),
-                                  Text(
-                                      countryCode?.dialCode ?? '',
-                                    style: TextStyle(
-                                      color: Colors.yellow.shade700
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                            onChanged: onChangedCountry,
-                            useSafeArea: true,
-                            useUiOverlay: true,
                           ),
-                          Expanded(
-                              child: TextFormField(
-                                controller: phoneNumberController,
-                                decoration: const InputDecoration(
-                                  labelText: "Numéro de téléphone"
-                                ),
-                                style: const TextStyle(
-                                  color: Colors.white
-                                ),
-                              )
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      width: 300,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 12.0),
-                        child: ElevatedButton(
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
-                            ),
-                            onPressed: null,
-                            child: const Text(
-                                'Créer un compte',
-                              style: TextStyle(color: Colors.white),
-                            )
                         ),
-                      ),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: firstnameController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                              labelText: "Prénom",
+                            ),
+                            style: const TextStyle(
+                                color: Colors.white
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 300,
+                          child: DropdownButtonFormField(
+                            onChanged: onChangedGender,
+                            decoration: const InputDecoration(
+                                labelText: "Sexe",
+                                isDense: false
+                            ),
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            selectedItemBuilder: (BuildContext context) {
+                              return genders.map((String value) {
+                                return Text(
+                                  genderValue ?? '',
+                                  style: const TextStyle(color: Colors.white),
+                                );
+                              }).toList();
+                            },
+                            items: genders.map((value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                    value,
+                                    style: const TextStyle(
+                                        color: Colors.black
+                                    )
+                                )
+                            )).toList(),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            controller: birthDayController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                                labelText: "Date de naissance"
+                            ),
+                            readOnly: true,
+                            onTap: pickDate,
+                            style: const TextStyle(
+                                color: Colors.white
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                ),
+                SizedBox(
+                  width: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
+                        ),
+                        onPressed: isLoading ? null : register,
+                        child: isLoading ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        ) : const Text(
+                          'Enregistrer',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold
+                          ),
+                        )
                     ),
-                  ],
-                )
-            )
-          ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -496,31 +488,49 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   @override
   void dispose() {
+    nameController.dispose();
+    firstnameController.dispose();
     birthDayController.dispose();
-    phoneNumberController.dispose();
     super.dispose();
   }
 }
 
 
 class VerificationCode extends StatefulWidget {
-  const VerificationCode({super.key, required this.phoneNumber, required this.verificationId});
+  VerificationCode({super.key, required this.phoneNumber, required this.verificationId});
 
   final String phoneNumber;
   final String verificationId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
 }
 
 class _VerificationCodeState extends State<VerificationCode> {
-  FirebaseAuth auth = FirebaseAuth.instance;
+
   String? otp;
 
-  void onCompleted(String value) {
-    setState(() {
-      otp = value;
-    });
+  void onCompleted(String value) async {
+    try {
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: widget.verificationId, smsCode: value);
+      final User? user = (await widget._auth.signInWithCredential(credential)).user;
+
+      if (user != null) {
+        // TODO: save the user locally
+
+        final route = MaterialPageRoute(
+            builder: (context) => RegistrationPage(uuid: user.uid,)
+        );
+
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
+      }
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return; // check if state is mounted, because this is a async function
+      showSnackbar(context, error.message.toString());
+    }
+
   }
   void resend() {}
 
@@ -531,6 +541,7 @@ class _VerificationCodeState extends State<VerificationCode> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

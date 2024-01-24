@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -9,7 +11,7 @@ import 'firebase_options.dart';
 
 const kWebRecaptchaSiteKey = '6Lemcn0dAAAAABLkf6aiiHvpGD6x-zF3nOSDU2M8';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
@@ -24,6 +26,11 @@ Future<void> main() async {
   //   appleProvider: AppleProvider.debug,
   //   webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
   // );
+  
+  await FirebaseAuth.instance.setLanguageCode("fr");
+  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+
+  FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
 
   ValidationBuilder.setLocale('fr');
   runApp(const MyApp());
