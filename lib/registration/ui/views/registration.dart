@@ -196,6 +196,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                           ),
                           Expanded(
                               child: TextFormField(
+                                autofocus: true,
                                 controller: phoneNumberController,
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.done,
