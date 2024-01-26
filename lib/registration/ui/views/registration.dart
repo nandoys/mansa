@@ -1,11 +1,17 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_list_pick/country_list_pick.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:form_validator/form_validator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:mansa/registration/models/models.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:mansa/utils/utils.dart';
+import 'package:mansa/app/ui/views/mansa.dart';
 
 class AuthentificationPage extends StatefulWidget {
   AuthentificationPage({super.key});
@@ -50,7 +56,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
         // TODO: save the user locally
 
         final route = MaterialPageRoute(
-            builder: (context) => RegistrationPage(uuid: user.uid,)
+            builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: phoneNumberController.text,)
         );
 
         if (!mounted) return;
@@ -284,17 +290,21 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
 
 
 class RegistrationPage extends StatefulWidget {
-  RegistrationPage({super.key, required this.uuid});
+  RegistrationPage({super.key, required this.uuid, required this.phoneNumber});
 
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
+  final _storage = FirebaseStorage.instance;
   final String uuid;
+  final String phoneNumber;
 
   @override
   State<RegistrationPage> createState() => _RegistrationPageState();
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+  XFile? image;
+  bool loadingImage = false;
   List<String> genders = <String>['Homme', 'Femme'];
   // List<String> idDocuments = <String>['Carte nationale', 'Passeport', 'Permis de conduire'];
   String? genderValue;
@@ -330,26 +340,71 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   }
 
-  void register() {
+  void pickImage() async {
+    setState(() {
+      loadingImage = true;
+    });
+    image = await openGallery(context);
+    setState(() {
+      loadingImage = false;
+    });
+  }
+
+  Future<String?> storeFileToStorage() async {
+    String? downloadUrl;
+    try {
+      UploadTask uploadTask = widget._storage.ref().child("profile/${widget.uuid}").putFile(File(image!.path));
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } on FirebaseException catch (error) {
+      if (!mounted) return null;
+      showSnackbar(context, error.message.toString());
+    }
+    return downloadUrl;
+  }
+
+  void register() async {
     if (formKey.currentState!.validate()) {
+      if (image == null) {
+        showSnackbar(context, "Veuillez ajouter votre photo");
+        return;
+      }
       setState(() {
         isLoading = true;
       });
-      final Map<String, dynamic> data = {
-        "uuid": widget.uuid,
-        "name": nameController.text,
-        "firstname": firstnameController.text,
-        "gender": genderValue,
-        "birthday": birthDayController.text
-      };
+
+      Account account = Account(
+          uuid: widget.uuid,
+          name: nameController.text.trim(),
+          firstname: firstnameController.text.trim(),
+          gender: genderValue as String,
+          birthday: birthday,
+          phoneNumber: widget.phoneNumber,
+          photo: '',
+          createAt: DateTime.now()
+      );
 
       try {
-        widget._db.collection("accounts").add(data).then((document) {
+        await storeFileToStorage().then((photoUrl) {
+          if (photoUrl != null) {
+            account.photo = photoUrl;
+          }
+        });
+
+        await widget._db.collection("accounts").doc(widget.uuid).set(account.toMap()).then((document) {
           setState(() {
             isLoading = false;
           });
 
+          final route = MaterialPageRoute(
+              builder: (context) => const Mansa()
+          );
+
+          Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
+
         });
+
       } catch (error) {
         setState(() {
           isLoading = false;
@@ -379,6 +434,25 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       color: Colors.white
                   ),
                 ),
+                const SizedBox(height: 15.0,),
+                InkWell(
+                  onTap: loadingImage ? null : pickImage,
+                  child: image == null ? CircleAvatar(
+                    radius: 80.0,
+                    child: loadingImage ? CircularProgressIndicator(
+                      color: Colors.yellow.shade700,
+                    ) : const Icon(
+                      Icons.person,
+                      size: 80.0,
+                    ),
+                  ) : CircleAvatar(
+                    radius: 80.0,
+                    backgroundImage: FileImage(File(image!.path)),
+                    child: loadingImage ? CircularProgressIndicator(
+                      color: Colors.yellow.shade700,
+                    ) : null,
+                  ),
+                ),
                 Form(
                     key: formKey,
                     child: Column(
@@ -387,6 +461,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         SizedBox(
                           width: 300,
                           child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             controller: nameController,
                             validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
                             decoration: const InputDecoration(
@@ -400,6 +475,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         SizedBox(
                           width: 300,
                           child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             controller: firstnameController,
                             validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
                             decoration: const InputDecoration(
@@ -413,6 +489,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         SizedBox(
                           width: 300,
                           child: DropdownButtonFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             onChanged: onChangedGender,
                             decoration: const InputDecoration(
                                 labelText: "Sexe",
@@ -441,6 +518,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         SizedBox(
                           width: 300,
                           child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             controller: birthDayController,
                             validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
                             decoration: const InputDecoration(
@@ -464,10 +542,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         style: ButtonStyle(
                             backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
                         ),
-                        onPressed: isLoading ? null : register,
+                        onPressed: isLoading || loadingImage ? null : register,
                         child: isLoading ? const CircularProgressIndicator(
                           color: Colors.white,
-                        ) : const Text(
+                        ) :
+                        const Text(
                           'Enregistrer',
                           style: TextStyle(
                               color: Colors.white,
@@ -520,7 +599,7 @@ class _VerificationCodeState extends State<VerificationCode> {
         // TODO: save the user locally
 
         final route = MaterialPageRoute(
-            builder: (context) => RegistrationPage(uuid: user.uid,)
+            builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: widget.phoneNumber,)
         );
 
         if (!mounted) return;

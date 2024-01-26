@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class Loans extends StatefulWidget {
-  const Loans({super.key});
+class Mansa extends StatefulWidget {
+  const Mansa({super.key});
 
   @override
-  State<Loans> createState() => _LoansState();
+  State<Mansa> createState() => _MansaState();
 }
 
-class _LoansState extends State<Loans> {
+class _MansaState extends State<Mansa> {
   List<BottomNavigationBarItem> navigations = [
     const BottomNavigationBarItem(
         icon:Icon(Icons.home), label: "",
