@@ -44,6 +44,17 @@ class _MansaState extends State<Mansa> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          "Mansa",
+          style: TextStyle(
+            //color: Colors.yellow.shade700,
+            fontWeight: FontWeight.bold,
+            fontSize: 20.0
+          ),
+        ),
+      ),
       body: view,
       bottomNavigationBar: BottomNavigationBar(
           onTap: selectedNavigation,
@@ -74,7 +85,7 @@ class _DashBoardState extends State<DashBoard> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: constraints.maxWidth * 0.80,
+                    width: constraints.maxWidth * 0.95,
                     child: Card(
                       elevation: 12.0,
                       child: Padding(

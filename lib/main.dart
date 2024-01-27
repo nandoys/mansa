@@ -29,10 +29,10 @@ void main() async {
   // );
   
   await FirebaseAuth.instance.setLanguageCode("fr");
-  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-
-  FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-  await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
+  // await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+  //
+  // FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  // await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
 
   ValidationBuilder.setLocale('fr');
   runApp(const MyApp());
@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
           fontFamily: 'Roboto',
-          scaffoldBackgroundColor: Colors.black87,
+          scaffoldBackgroundColor: Colors.grey.shade900,
           inputDecorationTheme: const InputDecorationTheme(
             isDense: true,
             focusedBorder: UnderlineInputBorder(
