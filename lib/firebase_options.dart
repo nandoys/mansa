@@ -44,38 +44,37 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBCJ6OwEY_mgBiAr5gyyGtfW33atO76HtI',
-    appId: '1:942306724641:web:e03a98ef360f23e1e98c60',
-    messagingSenderId: '942306724641',
-    projectId: 'mansa-70713',
-    authDomain: 'mansa-70713.firebaseapp.com',
-    storageBucket: 'mansa-70713.appspot.com',
-    measurementId: 'G-X0EGKY80BF',
+    apiKey: 'AIzaSyAIGAdiWDTBCOpvQCDll7c5U3S5_lkPKrQ',
+    appId: '1:1075954674202:web:cc735f0aefbba84de47fa3',
+    messagingSenderId: '1075954674202',
+    projectId: 'mansa-b93d3',
+    authDomain: 'mansa-b93d3.firebaseapp.com',
+    storageBucket: 'mansa-b93d3.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyA20RDThIY4RKwJ5_n3i87Zv22W0pozotY',
-    appId: '1:942306724641:android:3fdaee1903d9ba9de98c60',
-    messagingSenderId: '942306724641',
-    projectId: 'mansa-70713',
-    storageBucket: 'mansa-70713.appspot.com',
+    apiKey: 'AIzaSyCPQZmma5MS8LtFCSW1DiwLXfQs2yNCNZI',
+    appId: '1:1075954674202:android:b2770011b6decaebe47fa3',
+    messagingSenderId: '1075954674202',
+    projectId: 'mansa-b93d3',
+    storageBucket: 'mansa-b93d3.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBRbUJ39bm8rWNv1QwnHvm43P1j4NQtb5A',
-    appId: '1:942306724641:ios:7d4db1d8809ac43ae98c60',
-    messagingSenderId: '942306724641',
-    projectId: 'mansa-70713',
-    storageBucket: 'mansa-70713.appspot.com',
+    apiKey: 'AIzaSyC0RK4VW30tIWdrl20Nf9MwgSZcy5c32Sc',
+    appId: '1:1075954674202:ios:328f8079f9bf254de47fa3',
+    messagingSenderId: '1075954674202',
+    projectId: 'mansa-b93d3',
+    storageBucket: 'mansa-b93d3.appspot.com',
     iosBundleId: 'com.trustholding.mansa.mansa',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBRbUJ39bm8rWNv1QwnHvm43P1j4NQtb5A',
-    appId: '1:942306724641:ios:e3f37175ffee1e89e98c60',
-    messagingSenderId: '942306724641',
-    projectId: 'mansa-70713',
-    storageBucket: 'mansa-70713.appspot.com',
+    apiKey: 'AIzaSyC0RK4VW30tIWdrl20Nf9MwgSZcy5c32Sc',
+    appId: '1:1075954674202:ios:0447225dca48de02e47fa3',
+    messagingSenderId: '1075954674202',
+    projectId: 'mansa-b93d3',
+    storageBucket: 'mansa-b93d3.appspot.com',
     iosBundleId: 'com.trustholding.mansa.mansa.RunnerTests',
   );
 }

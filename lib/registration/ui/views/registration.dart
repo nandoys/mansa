@@ -303,7 +303,7 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-  XFile? image;
+  File? image;
   bool loadingImage = false;
   List<String> genders = <String>['Homme', 'Femme'];
   // List<String> idDocuments = <String>['Carte nationale', 'Passeport', 'Permis de conduire'];
@@ -353,7 +353,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Future<String?> storeFileToStorage() async {
     String? downloadUrl;
     try {
-      UploadTask uploadTask = widget._storage.ref().child("profile/${widget.uuid}").putFile(File(image!.path));
+      final metadata = SettableMetadata(
+        contentType: 'image/jpeg',
+        customMetadata: {'file-path': image!.path},
+      );
+      UploadTask uploadTask = widget._storage.ref().child("profile/${widget.uuid}").putFile(image!, metadata);
       TaskSnapshot snapshot = await uploadTask;
       String downloadUrl = await snapshot.ref.getDownloadURL();
       return downloadUrl;
@@ -423,170 +427,150 @@ class _RegistrationPageState extends State<RegistrationPage> {
     String formattedDate = DateFormat('dd-MM-yyyy', 'fr').format(birthday);
     birthDayController.text = formattedDate;
 
-    return FutureBuilder(
-        future: widget._db.collection("accounts").doc(widget.uuid).get(),
-        builder: (context, snapshot) {
-          if(snapshot.connectionState == ConnectionState.done) {
-            // redirect existing account
-            if (snapshot.data!.exists) {
-              return const Mansa();
-            }
-
-            return Scaffold(
-              body: SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Complétez votre identité',
+                  style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white
+                  ),
+                ),
+                const SizedBox(height: 15.0,),
+                InkWell(
+                  onTap: loadingImage || isLoading ? null : pickImage,
+                  child: image == null ? CircleAvatar(
+                    radius: 80.0,
+                    child: loadingImage ? CircularProgressIndicator(
+                      color: Colors.yellow.shade700,
+                    ) : const Icon(
+                      Icons.person,
+                      size: 80.0,
+                    ),
+                  ) : CircleAvatar(
+                    radius: 80.0,
+                    backgroundImage: FileImage(File(image!.path)),
+                    child: loadingImage ? CircularProgressIndicator(
+                      color: Colors.yellow.shade700,
+                    ) : null,
+                  ),
+                ),
+                Form(
+                    key: formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Complétez votre identité',
-                          style: TextStyle(
-                              fontSize: 20.0,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white
-                          ),
-                        ),
-                        const SizedBox(height: 15.0,),
-                        InkWell(
-                          onTap: loadingImage ? null : pickImage,
-                          child: image == null ? CircleAvatar(
-                            radius: 80.0,
-                            child: loadingImage ? CircularProgressIndicator(
-                              color: Colors.yellow.shade700,
-                            ) : const Icon(
-                              Icons.person,
-                              size: 80.0,
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            controller: nameController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                              labelText: "Nom de famille",
                             ),
-                          ) : CircleAvatar(
-                            radius: 80.0,
-                            backgroundImage: FileImage(File(image!.path)),
-                            child: loadingImage ? CircularProgressIndicator(
-                              color: Colors.yellow.shade700,
-                            ) : null,
+                            style: const TextStyle(
+                                color: Colors.white
+                            ),
                           ),
-                        ),
-                        Form(
-                            key: formKey,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 300,
-                                  child: TextFormField(
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                                    controller: nameController,
-                                    validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
-                                    decoration: const InputDecoration(
-                                      labelText: "Nom de famille",
-                                    ),
-                                    style: const TextStyle(
-                                        color: Colors.white
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 300,
-                                  child: TextFormField(
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                                    controller: firstnameController,
-                                    validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
-                                    decoration: const InputDecoration(
-                                      labelText: "Prénom",
-                                    ),
-                                    style: const TextStyle(
-                                        color: Colors.white
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 300,
-                                  child: DropdownButtonFormField(
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                                    onChanged: onChangedGender,
-                                    decoration: const InputDecoration(
-                                        labelText: "Sexe",
-                                        isDense: false
-                                    ),
-                                    validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
-                                    selectedItemBuilder: (BuildContext context) {
-                                      return genders.map((String value) {
-                                        return Text(
-                                          genderValue ?? '',
-                                          style: const TextStyle(color: Colors.white),
-                                        );
-                                      }).toList();
-                                    },
-                                    items: genders.map((value) => DropdownMenuItem(
-                                        value: value,
-                                        child: Text(
-                                            value,
-                                            style: const TextStyle(
-                                                color: Colors.black
-                                            )
-                                        )
-                                    )).toList(),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 300,
-                                  child: TextFormField(
-                                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                                    controller: birthDayController,
-                                    validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
-                                    decoration: const InputDecoration(
-                                        labelText: "Date de naissance"
-                                    ),
-                                    readOnly: true,
-                                    onTap: pickDate,
-                                    style: const TextStyle(
-                                        color: Colors.white
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            )
                         ),
                         SizedBox(
                           width: 300,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 12.0),
-                            child: ElevatedButton(
-                                style: ButtonStyle(
-                                    backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
-                                ),
-                                onPressed: isLoading || loadingImage ? null : register,
-                                child: isLoading ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                ) :
-                                const Text(
-                                  'Enregistrer',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18.0,
-                                      fontWeight: FontWeight.bold
-                                  ),
+                          child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            controller: firstnameController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                              labelText: "Prénom",
+                            ),
+                            style: const TextStyle(
+                                color: Colors.white
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 300,
+                          child: DropdownButtonFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            onChanged: onChangedGender,
+                            decoration: const InputDecoration(
+                                labelText: "Sexe",
+                                isDense: false
+                            ),
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            selectedItemBuilder: (BuildContext context) {
+                              return genders.map((String value) {
+                                return Text(
+                                  genderValue ?? '',
+                                  style: const TextStyle(color: Colors.white),
+                                );
+                              }).toList();
+                            },
+                            items: genders.map((value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(
+                                    value,
+                                    style: const TextStyle(
+                                        color: Colors.black
+                                    )
                                 )
+                            )).toList(),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 300,
+                          child: TextFormField(
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            controller: birthDayController,
+                            validator: ValidationBuilder(requiredMessage: "Ce champ est réquis").build(),
+                            decoration: const InputDecoration(
+                                labelText: "Date de naissance"
+                            ),
+                            readOnly: true,
+                            onTap: pickDate,
+                            style: const TextStyle(
+                                color: Colors.white
                             ),
                           ),
                         ),
                       ],
+                    )
+                ),
+                SizedBox(
+                  width: 300,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 12.0),
+                    child: ElevatedButton(
+                        style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
+                        ),
+                        onPressed: isLoading || loadingImage ? null : register,
+                        child: isLoading ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        ) :
+                        const Text(
+                          'Enregistrer',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold
+                          ),
+                        )
                     ),
                   ),
                 ),
-              ),
-            );
-          }
-
-          return Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Colors.yellow.shade700,
-              ),
+              ],
             ),
-          );
-        }
+          ),
+        ),
+      ),
     );
   }
 

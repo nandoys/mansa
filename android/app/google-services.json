@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "942306724641",
-    "project_id": "mansa-70713",
-    "storage_bucket": "mansa-70713.appspot.com"
+    "project_number": "1075954674202",
+    "project_id": "mansa-b93d3",
+    "storage_bucket": "mansa-b93d3.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:942306724641:android:3fdaee1903d9ba9de98c60",
+        "mobilesdk_app_id": "1:1075954674202:android:b2770011b6decaebe47fa3",
         "android_client_info": {
           "package_name": "com.trustholding.mansa"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyA20RDThIY4RKwJ5_n3i87Zv22W0pozotY"
+          "current_key": "AIzaSyCPQZmma5MS8LtFCSW1DiwLXfQs2yNCNZI"
         }
       ],
       "services": {

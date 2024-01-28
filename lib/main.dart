@@ -20,13 +20,13 @@ void main() async {
 
   // Activate app check after initialization, but before
   // usage of any Firebase services.
-  // await FirebaseAppCheck.instance
-  // // Your personal reCaptcha public key goes here:
-  //     .activate(
-  //   androidProvider: AndroidProvider.debug,
-  //   appleProvider: AppleProvider.debug,
-  //   webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
-  // );
+  await FirebaseAppCheck.instance
+  // Your personal reCaptcha public key goes here:
+      .activate(
+    androidProvider: AndroidProvider.debug,
+    appleProvider: AppleProvider.debug,
+    webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
+  );
   
   await FirebaseAuth.instance.setLanguageCode("fr");
   // await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
