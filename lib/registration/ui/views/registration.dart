@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:form_validator/form_validator.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mansa/registration/models/models.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -204,6 +203,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
                                       package: 'country_list_pick',
                                     ),
                                   ),
+                                  const SizedBox(width: 5,),
                                   Text(
                                     countryCode?.dialCode ?? '',
                                     style: TextStyle(
@@ -309,7 +309,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   // List<String> idDocuments = <String>['Carte nationale', 'Passeport', 'Permis de conduire'];
   String? genderValue;
   bool isLoading = false;
-  DateTime birthday = DateTime(2006);
+  late DateTime birthday;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   TextEditingController nameController = TextEditingController();
   TextEditingController firstnameController = TextEditingController();
@@ -329,7 +329,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         currentDate: birthday,
         locale: const Locale("fr"),
         firstDate: DateTime(1924),
-        lastDate: DateTime(2006,12,31),
+        lastDate: DateTime(majorAge(),12,31),
     );
 
     if (dateValue != null) {
@@ -338,6 +338,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
       });
     }
 
+  }
+
+  int majorAge() {
+    final year = DateTime.now().year;
+    return year - 18;
   }
 
   void pickImage() async {
@@ -420,6 +425,12 @@ class _RegistrationPageState extends State<RegistrationPage> {
   Future<void> checkUserAccount() async {
     final data = await widget._db.collection("accounts").doc(widget.uuid).get();
 
+  }
+
+  @override
+  void initState() {
+    birthday = DateTime(majorAge());
+    super.initState();
   }
 
   @override

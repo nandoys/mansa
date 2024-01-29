@@ -29,10 +29,10 @@ void main() async {
   );
   
   await FirebaseAuth.instance.setLanguageCode("fr");
-  // await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-  //
-  // FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-  // await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
+  await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+
+  FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+  await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
 
   ValidationBuilder.setLocale('fr');
   runApp(const MyApp());
