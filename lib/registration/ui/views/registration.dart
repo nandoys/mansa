@@ -357,19 +357,16 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   Future<String?> storeFileToStorage() async {
     String? downloadUrl;
-    try {
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-        customMetadata: {'file-path': image!.path},
-      );
-      UploadTask uploadTask = widget._storage.ref().child("profile/${widget.uuid}").putFile(image!, metadata);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } on FirebaseException catch (error) {
-      if (!mounted) return null;
-      showSnackbar(context, error.message.toString());
-    }
+
+    final metadata = SettableMetadata(
+      contentType: 'image/jpeg',
+      customMetadata: {'file-path': image!.path},
+    );
+
+    UploadTask uploadTask = widget._storage.ref().child("profile/${widget.uuid}").putFile(image!, metadata);
+    TaskSnapshot snapshot = await uploadTask;
+    downloadUrl = await snapshot.ref.getDownloadURL();
+
     return downloadUrl;
   }
 
@@ -418,6 +415,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         setState(() {
           isLoading = false;
         });
+
       }
     }
   }

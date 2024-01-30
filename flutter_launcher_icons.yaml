@@ -2,4 +2,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: "assets/images/mansa.png"
+  image_path: "assets/images/chip.png"
+  adaptive_icon_background: "#212121" # only available for Android 8.0 devices and above
+  adaptive_icon_foreground: "assets/images/play_store_512.png" # only available for Android 8.0 devices and above
