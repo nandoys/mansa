@@ -1,6 +1,7 @@
+import 'dart:math';
+
 import 'package:awesome_card/awesome_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 class Mansa extends StatefulWidget {
   const Mansa({super.key});
@@ -84,15 +85,124 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
     const Tab(text: "Actif",),
   ];
   late final TabController _tabController;
+  late AnimationController _controller;
+  Animation<double>? _moveToBack;
+  Animation<double>? _moveToFront;
+  bool showBackSide = false;
+
+  final List<Widget> _tabViews = [
+    const Placeholder(child: Text("data 1"),),
+    const Placeholder(child: Text("data 2"),),
+    const Placeholder(child: Text("data 3"),),
+  ];
+
+  void switchCard() {
+    setState(() {
+      showBackSide = !showBackSide;
+    });
+}
+
+  Widget _buildCard({required String currency, required double balance}) {
+    return Card(
+      elevation: 15.0,
+      color: Colors.yellow.shade700,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "Portefeuille",
+                  style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.w500
+                  ),
+                ),
+                IconButton(
+                    onPressed: switchCard,
+                    icon: const Tooltip(
+                      message: "Changer la dévise",
+                      child: Icon(Icons.swap_horiz_outlined),
+                    )
+                )
+              ],
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "assets/images/white-chip.png",
+                  width: 80,
+                ),
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 50.0),
+                    child: Text(
+                      "$currency $balance",
+                      style: const TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Text(
+              "CARDHOLDER NAME",
+              textAlign: TextAlign.start,
+              style: TextStyle(
+                  fontSize: 16.0
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _controller = AnimationController(
+        duration: const Duration(milliseconds: 1000), vsync: this);
+
+    _moveToBack = TweenSequence<double>([
+      TweenSequenceItem<double>(
+          tween: Tween<double>(begin: 0.0, end: pi / 2)
+              .chain(CurveTween(curve: Curves.easeInBack)),
+          weight: 50.0),
+      TweenSequenceItem<double>(
+          tween: ConstantTween<double>(pi / 2), weight: 50.0)
+    ]).animate(_controller);
+
+    _moveToFront = TweenSequence<double>(
+      [
+        TweenSequenceItem<double>(
+          tween: ConstantTween<double>(pi / 2),
+          weight: 50.0,
+        ),
+        TweenSequenceItem<double>(
+          tween: Tween<double>(begin: -pi / 2, end: 0.0)
+              .chain(CurveTween(curve: Curves.easeOutBack)),
+          weight: 50.0,
+        ),
+      ],
+    ).animate(_controller);
   }
 
   @override
   Widget build(BuildContext context) {
+
+    if (showBackSide) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
 
     return LayoutBuilder(
         builder: (context, constraints) {
@@ -102,65 +212,17 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
               children: [
                 SizedBox(
                   width: constraints.maxWidth * 0.95,
-                  child: Card(
-                    elevation: 15.0,
-                    color: Colors.yellow.shade700,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        children: [
-                          const Text(
-                              "Portefeuille",
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.w500
-                            ),
-                          ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                "assets/images/white-chip.png",
-                                width: 80,
-                              ),
-                              const Expanded(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        "FC 45 000 000 000",
-                                        style: TextStyle(
-                                            fontSize: 20.0,
-                                            fontWeight: FontWeight.bold
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 8.0),
-                                        child: Text(
-                                          "|",
-                                          style: TextStyle(
-                                              fontSize: 20.0,
-                                              fontWeight: FontWeight.bold
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        "\$ 450",
-                                        style: TextStyle(
-                                            fontSize: 20.0,
-                                            fontWeight: FontWeight.bold
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  child: Stack(
+                    children: <Widget>[
+                      AwesomeCard(
+                        animation: _moveToBack,
+                        child: _buildCard(currency: "FC", balance: 5000),
                       ),
-                    ),
+                      AwesomeCard(
+                        animation: _moveToFront,
+                        child: _buildCard(currency: "\$", balance: 500),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -175,89 +237,25 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
                 ),
 
                 SizedBox(
-                  width: constraints.maxWidth * 0.80,
-                  child: Card(
-                    elevation: 12.0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        children: [
-                          const Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Sponsorisé")
-                            ],
-                          ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(50, (index) {
-                                return const SizedBox(
-                                  width: 150,
-                                  height: 150,
-                                  child: Card(
-                                    child: Text("OKKK"),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: constraints.maxWidth * 0.80,
-                  child: Card(
-                    elevation: 12.0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Flexible(
-                                  child: Text("Emprunt immobilier")
-                              ),
-                              Flexible(
-                                child: TextButton(
-                                    onPressed: (){},
-                                    child: const Row(
-                                      children: [
-                                        Flexible(child: Text("Tous les coupons")),
-                                        Expanded(child: Icon(Icons.arrow_forward))
-                                      ],
-                                    )
-                                ),
-                              )
-                            ],
-                          ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: List.generate(50, (index) {
-                                return const SizedBox(
-                                  width: 150,
-                                  height: 150,
-                                  child: Card(
-                                    child: Text("OKKK"),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                  width: MediaQuery.of(context).size.width * 0.90,
+                  height: constraints.maxHeight * 0.68,
+                  child: TabBarView(
+                      controller: _tabController,
+                      children: _tabViews
+                  )
+                )
               ],
             ),
           );
         }
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+    _tabController.dispose();
   }
 }
 

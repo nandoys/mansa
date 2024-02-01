@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
+// import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:form_validator/form_validator.dart';
+import 'package:mansa/app/ui/views/mansa.dart';
 import 'package:mansa/registration/ui/views/registration.dart';
 
 import 'firebase_options.dart';
@@ -88,14 +89,15 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const MyHomePage(title: 'Mansa'),
+      home: MyHomePage(title: 'Mansa'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, required this.title});
   final String title;
+  final _auth = FirebaseAuth.instance;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -111,117 +113,137 @@ class _MyHomePageState extends State<MyHomePage> {
   void showPrivacy() {}
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text(
-                  'Bienvenue sur',
-                  style: TextStyle(
-                      fontSize: 30.0,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white
-                  ),
-                ),
-                SizedBox(
-                  width: 600,
-                  height: 300,
-                  child: FittedBox(
-                    child: Image.asset('assets/images/logo.png'),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Flexible(
-                        child: Text(
-                          'Lisez notre ',
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        )
-                    ),
-                    Flexible(
-                        flex: 3,
-                        child: InkWell(
-                          onTap: showPrivacy,
-                          child: Text(
-                            'politique de confidentialité, ',
-                            style: TextStyle(
-                              color: Colors.yellow.shade700,
-                            ),
-                          ),
-                        )
-                    ),
-                    const Flexible(
-                        child: Text(
-                          "Cliquez sur ",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        )
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                      bottom: 8.0
-                  ),
-                  child: Row(
+    return StreamBuilder(
+        stream: widget._auth.idTokenChanges(),
+        builder: (context, snapShot) {
+          if(snapShot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: Colors.yellow.shade700,
+              ),
+            );
+          }
+          if(snapShot.data != null) {
+            return const Mansa();
+          }
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Flexible(
+                    children: <Widget>[
+                      const Text(
+                        'Bienvenue sur',
+                        style: TextStyle(
+                            fontSize: 30.0,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white
+                        ),
+                      ),
+                      SizedBox(
+                        width: 600,
+                        height: 300,
+                        child: FittedBox(
+                          child: Image.asset('assets/images/logo.png'),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Flexible(
+                              child: Text(
+                                'Lisez notre ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              )
+                          ),
+                          Flexible(
+                              flex: 3,
+                              child: InkWell(
+                                onTap: showPrivacy,
+                                child: Text(
+                                  'politique de confidentialité, ',
+                                  style: TextStyle(
+                                    color: Colors.yellow.shade700,
+                                  ),
+                                ),
+                              )
+                          ),
+                          const Flexible(
+                              child: Text(
+                                "Cliquez sur ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              )
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            bottom: 8.0
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Flexible(
+                              child: Text(
+                                "Accepter et Continuer pour accepter ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: showPrivacy,
+                              child: Text(
+                                "les conditions d'utilisation",
+                                style: TextStyle(
+                                  color: Colors.yellow.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                          onPressed: register,
+                          style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
+                          ),
+                          child: const Text(
+                            'Accepter et Continuer',
+                            style: TextStyle(
+                                color: Colors.white
+                            ),
+                          )
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(top: 40.0),
                         child: Text(
-                          "Accepter et Continuer pour accepter ",
+                          "Dévelopé par Gradi Nandoy",
                           style: TextStyle(
                             color: Colors.white,
                           ),
                         ),
-                      ),
-                      InkWell(
-                        onTap: showPrivacy,
-                        child: Text(
-                          "les conditions d'utilisation",
-                          style: TextStyle(
-                            color: Colors.yellow.shade700,
-                          ),
-                        ),
-                      ),
+                      )
                     ],
                   ),
                 ),
-                ElevatedButton(
-                    onPressed: register,
-                    style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.resolveWith((states) => Colors.yellow.shade700)
-                    ),
-                    child: const Text(
-                      'Accepter et Continuer',
-                      style: TextStyle(
-                          color: Colors.white
-                      ),
-                    )
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(top: 40.0),
-                  child: Text(
-                    "Dévelopé par Gradi Nandoy",
-                    style: TextStyle(
-                        color: Colors.white,
-                    ),
-                  ),
-                )
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
+          );
+        }
     );
   }
 }
