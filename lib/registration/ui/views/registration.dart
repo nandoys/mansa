@@ -16,6 +16,7 @@ class AuthentificationPage extends StatefulWidget {
   AuthentificationPage({super.key});
 
   final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
 
   @override
   State<AuthentificationPage> createState() => _AuthentificationPageState();
@@ -54,9 +55,16 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
       if(user != null) {
         // TODO: save the user locally
 
-        final route = MaterialPageRoute(
+        PageRoute route = MaterialPageRoute(
             builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: phoneNumberController.text,)
         );
+
+        final account = await widget._db.collection("accounts").doc(user.uid).get();
+        if (account.exists) {
+          route = MaterialPageRoute(
+              builder: (context) => Mansa()
+          );
+        }
 
         if (!mounted) return;
         Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
@@ -83,7 +91,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
     String phoneNumber = "$countryDialCode${phoneNumberController.text}";
     final route = MaterialPageRoute(
         builder: (context) => VerificationCode(
-          phoneNumber: phoneNumber, verificationId: verificationId,
+          phoneNumber: phoneNumber, verificationId: verificationId, resendToken: forceResendingToken
         )
     );
     Navigator.of(context).push(route);
@@ -292,7 +300,7 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
 class RegistrationPage extends StatefulWidget {
   RegistrationPage({super.key, required this.uuid, required this.phoneNumber});
 
-  final _auth = FirebaseAuth.instance;
+  // final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
   final String uuid;
@@ -404,7 +412,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           });
 
           final route = MaterialPageRoute(
-              builder: (context) => const Mansa()
+              builder: (context) => Mansa()
           );
 
           Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
@@ -594,11 +602,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
 
 class VerificationCode extends StatefulWidget {
-  VerificationCode({super.key, required this.phoneNumber, required this.verificationId});
+  VerificationCode({super.key, required this.phoneNumber, required this.verificationId, required this.resendToken});
 
   final String phoneNumber;
   final String verificationId;
+  final int? resendToken;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
 
   @override
   State<VerificationCode> createState() => _VerificationCodeState();
@@ -606,30 +616,116 @@ class VerificationCode extends StatefulWidget {
 
 class _VerificationCodeState extends State<VerificationCode> {
 
-  String? otp;
+  String? verificationId;
+  int? resendToken;
+  bool isLoading = false;
 
   void onCompleted(String value) async {
+
+    setState(() {
+      isLoading = true;
+    });
+
     try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: widget.verificationId, smsCode: value);
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+          verificationId: verificationId ?? widget.verificationId,
+          smsCode: value
+      );
+
       final User? user = (await widget._auth.signInWithCredential(credential)).user;
 
       if (user != null) {
         // TODO: save the user locally
 
-        final route = MaterialPageRoute(
+        PageRoute route = MaterialPageRoute(
             builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: widget.phoneNumber,)
         );
 
+        final account = await widget._db.collection("accounts").doc(user.uid).get();
+        if (account.exists) {
+          route = MaterialPageRoute(
+              builder: (context) => Mansa()
+          );
+        }
+
         if (!mounted) return;
+        setState(() {
+          isLoading = false;
+        });
         Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
       }
     } on FirebaseAuthException catch (error) {
+      setState(() {
+        isLoading = false;
+      });
       if (!mounted) return; // check if state is mounted, because this is a async function
       showSnackbar(context, error.message.toString());
     }
 
   }
-  void resend() {}
+
+  void verificationCompleted(PhoneAuthCredential credential) async {
+    setState(() {
+      isLoading = false;
+    });
+    try {
+      final User? user = (await widget._auth.signInWithCredential(credential)).user;
+      if(user != null) {
+        // TODO: save the user locally
+
+        PageRoute route = MaterialPageRoute(
+            builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: widget.phoneNumber,)
+        );
+
+        final account = await widget._db.collection("accounts").doc(user.uid).get();
+        if (account.exists) {
+          route = MaterialPageRoute(
+              builder: (context) => Mansa()
+          );
+        }
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
+      }
+    } catch(error) {
+      print(error.runtimeType);
+    }
+
+  }
+
+  void verificationFailed(FirebaseAuthException error) {
+    setState(() {
+      isLoading = false;
+    });
+    //network-request-failed
+    showSnackbar(context, error.message.toString());
+  }
+
+  void codeSent(String vId, int? forceResendingToken) {
+    setState(() {
+      verificationId = vId;
+      resendToken = forceResendingToken;
+    });
+  }
+
+  void codeAutoRetrievalTimeout(String verificationId) {}
+
+  void resend() {
+    try {
+      widget._auth.verifyPhoneNumber(
+          phoneNumber: widget.phoneNumber,
+          verificationCompleted: verificationCompleted,
+          verificationFailed: verificationFailed,
+          codeSent: codeSent,
+          codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+          forceResendingToken: resendToken ?? widget.resendToken
+      );
+    } on FirebaseAuthException catch (error) {
+      setState(() {
+        isLoading = false;
+      });
+      showSnackbar(context, error.message.toString());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -712,7 +808,7 @@ class _VerificationCodeState extends State<VerificationCode> {
                       ),
                     ),
                     TextButton(
-                        onPressed: resend,
+                        onPressed: isLoading ? null : resend,
                         child: Text(
                           "Renvoyer",
                           style: TextStyle(
@@ -722,6 +818,9 @@ class _VerificationCodeState extends State<VerificationCode> {
                     )
                   ],
                 ),
+                if(isLoading) CircularProgressIndicator(
+                  color: Colors.yellow.shade700,
+                )
               ],
             ),
           ),

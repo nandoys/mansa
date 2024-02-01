@@ -1,10 +1,15 @@
 import 'dart:math';
 
 import 'package:awesome_card/awesome_card.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mansa/app/ui/widgets/dashboard_widgets.dart';
+import 'package:mansa/main.dart';
+import 'package:mansa/utils/utils.dart';
 
 class Mansa extends StatefulWidget {
-  const Mansa({super.key});
+  Mansa({super.key});
+  final _auth = FirebaseAuth.instance;
 
   @override
   State<Mansa> createState() => _MansaState();
@@ -38,6 +43,20 @@ class _MansaState extends State<Mansa> {
     });
   }
 
+  void logout() async {
+    try {
+      await widget._auth.signOut();
+      final route = MaterialPageRoute(
+          builder: (context) => HomePage()
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) return;
+      showSnackbar(context, error.message.toString());
+    }
+  }
+
   @override
   void initState() {
     view = views[0];
@@ -58,6 +77,15 @@ class _MansaState extends State<Mansa> {
             fontSize: 20.0
           ),
         ),
+        actions: [
+          Tooltip(
+            message: "Se déconnecter",
+            child: IconButton(
+                onPressed: logout,
+                icon: const Icon(Icons.exit_to_app)
+            ),
+          )
+        ],
       ),
       body: view,
       bottomNavigationBar: BottomNavigationBar(
@@ -91,8 +119,8 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
   bool showBackSide = false;
 
   final List<Widget> _tabViews = [
-    const Placeholder(child: Text("data 1"),),
-    const Placeholder(child: Text("data 2"),),
+    const TransactionHistory(),
+    const TransactionHistory(),
     const Placeholder(child: Text("data 3"),),
   ];
 
@@ -152,10 +180,11 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
               ],
             ),
             const Text(
-              "CARDHOLDER NAME",
+              "URSULA NGALUBENGE",
               textAlign: TextAlign.start,
               style: TextStyle(
-                  fontSize: 16.0
+                fontWeight: FontWeight.bold,
+                fontSize: 16.0,
               ),
             )
           ],
@@ -258,7 +287,6 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
     _tabController.dispose();
   }
 }
-
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
