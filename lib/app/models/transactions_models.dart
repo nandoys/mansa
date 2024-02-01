@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class Transaction extends Equatable {
   final String id;
   final DateTime transactionAt;
+  final String transactionType;
   final String reference;
   final Currency currency;
   final double amount;
@@ -13,6 +14,7 @@ class Transaction extends Equatable {
   const Transaction({
     required this.id,
     required this.transactionAt,
+    required this.transactionType,
     required this.reference,
     required this.currency,
     required this.amount,
@@ -25,6 +27,7 @@ class Transaction extends Equatable {
     return Transaction(
         id: map['id'] ?? '',
         transactionAt: map['transactionAt'] ?? '',
+        transactionType: map['transactionType'] ?? '',
         reference: map['reference'] ?? '',
         currency: Currency.fromMap(map['currency']),
         amount: map['amount'] ?? '',
@@ -38,6 +41,7 @@ class Transaction extends Equatable {
     return {
       'id': id,
       'transactionAt': transactionAt,
+      'transactionType': transactionType,
       'reference': reference,
       'currency': currency.toMap(),
       'amount': amount,

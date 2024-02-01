@@ -5,11 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mansa/app/ui/widgets/dashboard_widgets.dart';
 import 'package:mansa/main.dart';
+import 'package:mansa/registration/models/models.dart';
 import 'package:mansa/utils/utils.dart';
 
 class Mansa extends StatefulWidget {
-  Mansa({super.key});
+  Mansa({super.key, required this.account});
   final _auth = FirebaseAuth.instance;
+  final Account account;
 
   @override
   State<Mansa> createState() => _MansaState();
@@ -18,10 +20,11 @@ class Mansa extends StatefulWidget {
 class _MansaState extends State<Mansa> {
   List<BottomNavigationBarItem> navigations = [
     const BottomNavigationBarItem(
-        icon:Icon(Icons.home), label: "",
+      icon:Icon(Icons.home),
+      label: "Accueil",
     ),
     const BottomNavigationBarItem(
-      icon:Icon(Icons.person), label: "",
+      icon:Icon(Icons.person), label: "Profil",
     ),
   ];
   bool isFloatButtonShown = false;
@@ -62,8 +65,8 @@ class _MansaState extends State<Mansa> {
   @override
   void initState() {
     views = [
-      DashBoard(showFloatingButton: showFloatButton,),
-      const Profile()
+      DashBoard(showFloatingButton: showFloatButton, account: widget.account,),
+      Profile(account: widget.account,)
     ];
 
     view = views[0];
@@ -109,6 +112,9 @@ class _MansaState extends State<Mansa> {
           onTap: selectedNavigation,
           currentIndex: selectedNavigationIndex,
           selectedItemColor: Colors.yellow.shade700,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500
+          ),
           items: navigations
       ),
     );
@@ -117,8 +123,9 @@ class _MansaState extends State<Mansa> {
 
 
 class DashBoard extends StatefulWidget {
-  const DashBoard({super.key, required this.showFloatingButton});
+  const DashBoard({super.key, required this.showFloatingButton, required this.account});
   final void Function(bool) showFloatingButton;
+  final Account account;
 
   @override
   State<DashBoard> createState() => _DashBoardState();
@@ -140,7 +147,7 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
   final List<Widget> _tabViews = [
     const TransactionHistory(),
     const TransactionHistory(),
-    const Placeholder(child: Text("data 3"),),
+    const AssetHistory(),
   ];
 
   void switchCard() {
@@ -171,7 +178,9 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
                     onPressed: switchCard,
                     icon: const Tooltip(
                       message: "Changer la dévise",
-                      child: Icon(Icons.swap_horiz_outlined),
+                      child: Icon(
+                        Icons.swap_horiz_outlined,
+                      ),
                     )
                 )
               ],
@@ -198,10 +207,10 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            const Text(
-              "URSULA NGALUBENGE",
+            Text(
+              "${widget.account.firstname.toUpperCase()} ${widget.account.name.toUpperCase()}",
               textAlign: TextAlign.start,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16.0,
               ),
@@ -317,17 +326,70 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
 }
 
 class Profile extends StatefulWidget {
-  const Profile({super.key});
+  const Profile({super.key, required this.account});
+  final Account account;
 
   @override
   State<Profile> createState() => _ProfileState();
 }
 
 class _ProfileState extends State<Profile> {
+  bool isIdCardVerify = true;
+  bool isProofOfAddressVerify = true;
   @override
   Widget build(BuildContext context) {
-    return const Placeholder(
-      child: Text('Profile', style: TextStyle(color: Colors.white),),
+    return LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(widget.account.photo),
+                  maxRadius: 80.0,
+                ),
+                InkWell(
+                  onTap: (){},
+                  child: const ListTile(
+                    title: Text("Informations personnelles"),
+                    trailing: Icon(Icons.arrow_forward_ios_rounded),
+                  ),
+                ),
+                const ListTile(
+                  title: Text(
+                    "KYC",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  subtitle: Text(
+                      "Conformité avec les documents légaux"
+                  ),
+                ),
+                InkWell(
+                  onTap: isIdCardVerify? null : (){},
+                  child: ListTile(
+                    title: const Text("Carte d'identité"),
+                    trailing: isIdCardVerify ? const Icon(
+                      Icons.verified,
+                      color: Colors.green,
+                    ) : const Icon(Icons.arrow_forward_ios_rounded),
+                  ),
+                ),
+                InkWell(
+                  onTap: isProofOfAddressVerify ? null : (){},
+                  child: ListTile(
+                    title: const Text("Preuve d'adresse"),
+                    trailing: isProofOfAddressVerify ? const Icon(
+                      Icons.verified,
+                      color: Colors.green,
+                    ) : const Icon(Icons.arrow_forward_ios_rounded),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
     );
   }
 }

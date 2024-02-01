@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:form_validator/form_validator.dart';
 import 'package:mansa/app/ui/views/mansa.dart';
+import 'package:mansa/registration/models/models.dart';
 import 'package:mansa/registration/ui/views/registration.dart';
 
 import 'firebase_options.dart';
@@ -100,6 +101,7 @@ class MyApp extends StatelessWidget {
 class HomePage extends StatefulWidget {
   HomePage({super.key});
   final _auth = FirebaseAuth.instance;
+  final _db = FirebaseFirestore.instance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -132,7 +134,28 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
 
     if(currentUser != null) {
-      return Mansa();
+      return FutureBuilder(
+          future: widget._db.collection("accounts").doc(currentUser?.uid).get(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.yellow.shade700,
+                  ),
+                ),
+              );
+            }
+
+            if (snapshot.data!.exists) {
+              final account = Account.fromMap(snapshot.data!.data()!);
+              return Mansa(account: account,);
+            } else {
+              return RegistrationPage(uuid: currentUser!.uid, phoneNumber: currentUser!.phoneNumber!);
+            }
+
+          }
+      );
     }
 
     return Scaffold(

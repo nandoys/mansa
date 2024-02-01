@@ -59,10 +59,11 @@ class _AuthentificationPageState extends State<AuthentificationPage> {
             builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: phoneNumberController.text,)
         );
 
-        final account = await widget._db.collection("accounts").doc(user.uid).get();
-        if (account.exists) {
+        final document = await widget._db.collection("accounts").doc(user.uid).get();
+        if (document.exists) {
+          final account = Account.fromMap(document.data()!);
           route = MaterialPageRoute(
-              builder: (context) => Mansa()
+              builder: (context) => Mansa(account: account,)
           );
         }
 
@@ -396,7 +397,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
           birthday: birthday,
           phoneNumber: widget.phoneNumber,
           photo: '',
-          createAt: DateTime.now()
+          createAt: DateTime.now(),
+          accountType: "standard"
       );
 
       try {
@@ -412,7 +414,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
           });
 
           final route = MaterialPageRoute(
-              builder: (context) => Mansa()
+              builder: (context) => Mansa(account: account,)
           );
 
           Navigator.of(context).pushAndRemoveUntil(route, (Route<dynamic> route) => false);
@@ -641,10 +643,11 @@ class _VerificationCodeState extends State<VerificationCode> {
             builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: widget.phoneNumber,)
         );
 
-        final account = await widget._db.collection("accounts").doc(user.uid).get();
-        if (account.exists) {
+        final document = await widget._db.collection("accounts").doc(user.uid).get();
+        if (document.exists) {
+          final account = Account.fromMap(document.data()!);
           route = MaterialPageRoute(
-              builder: (context) => Mansa()
+              builder: (context) => Mansa(account: account,)
           );
         }
 
@@ -677,10 +680,11 @@ class _VerificationCodeState extends State<VerificationCode> {
             builder: (context) => RegistrationPage(uuid: user.uid, phoneNumber: widget.phoneNumber,)
         );
 
-        final account = await widget._db.collection("accounts").doc(user.uid).get();
-        if (account.exists) {
+        final document = await widget._db.collection("accounts").doc(user.uid).get();
+        if (document.exists) {
+          final account = Account.fromMap(document.data()!);
           route = MaterialPageRoute(
-              builder: (context) => Mansa()
+              builder: (context) => Mansa(account: account,)
           );
         }
         if (!mounted) return;
