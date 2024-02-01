@@ -53,6 +53,9 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: 'Roboto',
           scaffoldBackgroundColor: Colors.grey.shade900,
+          floatingActionButtonTheme: FloatingActionButtonThemeData(
+            backgroundColor: Colors.yellow.shade700
+          ),
           inputDecorationTheme: const InputDecorationTheme(
             isDense: true,
             focusedBorder: UnderlineInputBorder(

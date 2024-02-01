@@ -21,25 +21,27 @@ class _MansaState extends State<Mansa> {
         icon:Icon(Icons.home), label: "",
     ),
     const BottomNavigationBarItem(
-        icon:Icon(Icons.wallet), label: "",
-    ),
-    const BottomNavigationBarItem(
       icon:Icon(Icons.person), label: "",
     ),
   ];
+  bool isFloatButtonShown = false;
 
-  List<Widget> views = const [
-    DashBoard(),
-    Wallet(),
-    Profile()
-  ];
+  late List<Widget> views;
   Widget? view;
   int selectedNavigationIndex = 0;
 
   void selectedNavigation(int index) {
+    if(index == 1) isFloatButtonShown = false;
+
     setState(() {
       selectedNavigationIndex = index;
       view = views[index];
+    });
+  }
+
+  void showFloatButton(bool value) {
+    setState(() {
+      isFloatButtonShown = value;
     });
   }
 
@@ -59,6 +61,11 @@ class _MansaState extends State<Mansa> {
 
   @override
   void initState() {
+    views = [
+      DashBoard(showFloatingButton: showFloatButton,),
+      const Profile()
+    ];
+
     view = views[0];
     super.initState();
   }
@@ -88,6 +95,16 @@ class _MansaState extends State<Mansa> {
         ],
       ),
       body: view,
+      floatingActionButton: isFloatButtonShown ? FloatingActionButton(
+        onPressed: (){},
+        tooltip: "Faire un retrait",
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 25.0,
+        ),
+      ) : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavigationBar(
           onTap: selectedNavigation,
           currentIndex: selectedNavigationIndex,
@@ -100,7 +117,8 @@ class _MansaState extends State<Mansa> {
 
 
 class DashBoard extends StatefulWidget {
-  const DashBoard({super.key});
+  const DashBoard({super.key, required this.showFloatingButton});
+  final void Function(bool) showFloatingButton;
 
   @override
   State<DashBoard> createState() => _DashBoardState();
@@ -117,6 +135,7 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
   Animation<double>? _moveToBack;
   Animation<double>? _moveToFront;
   bool showBackSide = false;
+  int tabIndex = 0;
 
   final List<Widget> _tabViews = [
     const TransactionHistory(),
@@ -193,6 +212,14 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
     );
   }
 
+  void onTabTaped(int index) {
+    if (index == 1) {
+      widget.showFloatingButton(true);
+    } else {
+      widget.showFloatingButton(false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +289,7 @@ class _DashBoardState extends State<DashBoard> with TickerProviderStateMixin {
                     labelStyle: const TextStyle(
                         fontWeight: FontWeight.bold
                     ),
+                    onTap: onTabTaped,
                     tabs: tabs
                 ),
 
@@ -304,20 +332,4 @@ class _ProfileState extends State<Profile> {
   }
 }
 
-
-class Wallet extends StatefulWidget {
-  const Wallet({super.key});
-
-  @override
-  State<Wallet> createState() => _WalletState();
-}
-
-class _WalletState extends State<Wallet> {
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder(
-      child: Text("Wallet", style: TextStyle(color: Colors.white),),
-    );
-  }
-}
 
